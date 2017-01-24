@@ -7,6 +7,8 @@ library(sqldf)
 names(Master)
 names(Batting)
 
+
+# Leftjoin Master & Batting Retrieve playerID, nameFirst, and nameLast
 # dplyr
 master.batter <- Master %>%
   left_join(Batting, 'playerID') %>%
@@ -14,16 +16,36 @@ master.batter <- Master %>%
   distinct()
 
 # sqldf
-sql.master.batter <- sqldf("SELECT Master.*, Master.playerID, Master.nameFirst, Master.nameLast
+sql.master.batter <- sqldf("SELECT DISTINCT Master.playerID, Master.nameFirst, Master.nameLast
                            FROM Master
                            LEFT JOIN Batting
                            on Master.playerID = Batting.playerID") 
 
-  players %>% 
-  # Find all players who do not appear in Salaries
-  anti_join(Salaries, by = "playerID") %>%
-  # Count them
-  count()
+
+# Find players without salaries
+# dplyr
+master.no.salaries <- Master %>%
+  anti_join(Salaries, 'playerID')
+
+# sqldf
+sql.master.no.salaries <- sqldf("SELECT DISTINCT Master.playerID, Master.nameFirst, Master.nameLast
+                                FROM Master
+                                WHERE Master.playerID NOT IN (SELECT Salaries.playerID FROM Salaries)")
+
+
+# Find players without salaries that are also not in appearances
+# dplyr
+master.no.salaries <- Master %>%
+  anti_join(Salaries, 'playerID') %>%
+  semi_join(Appearances, 'playerID')
+
+#sqldf
+sql.master.no.salaries <- sqldf("SELECT DISTINCT Master.playerID, Master.nameFirst, Master.nameLast
+                                FROM Master
+                                WHERE Master.playerID NOT IN (SELECT Salaries.playerID FROM Salaries)
+# not working
+                                WHERE Master.playerID IN (Appearances.playerID FROM Appearances)")
+
 
   players %>% 
   anti_join(Salaries, by = "playerID") %>% 
